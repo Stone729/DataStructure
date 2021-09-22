@@ -1,4 +1,5 @@
 template <typename Object>
+
 class List
 {
 private:
