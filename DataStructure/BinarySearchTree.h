@@ -14,13 +14,34 @@
 template <typename Comparable> // Comparable must define operator<
 class BinarySearchTree {
 public:
-	BinarySearchTree(); // Default Constructor is always a must
+	BinarySearchTree() : root(new BinaryNode{ new Comparable, nullptr, nullptr }) {} // Default Constructor is always a must
 	// Big 5:
-	BinarySearchTree(const BinarySearchTree& rhs); // Copy Constructor
-	BinarySearchTree& operator=(const BinarySearchTree& rhs); // Copy Assignment Operator
-	BinarySearchTree(BinarySearchTree&& rhs); // Move Constructor
-	BinarySearchTree& operator=(BinarySearchTree&& rhs); // Move Assignment Operator
-	~BinarySearchTree(); // Destructor
+	// Copy Constructor
+	BinarySearchTree(const BinarySearchTree& rhs) : root(nullptr) {
+		root = clone(rhs.root);
+	}
+	// Copy Assignment Operator
+	BinarySearchTree& operator=(const BinarySearchTree& rhs) {
+		BinarySearchTree tempTree = rhs;
+		root = clone(tempTree.root);
+		return *this;
+	}
+	// Move Constructor
+	BinarySearchTree(BinarySearchTree&& rhs) : root(nullptr) {
+		root = clone(rhs.root);
+		rhs.makeEmpty();
+	}
+	// Move Assignment Operator
+	BinarySearchTree& operator=(BinarySearchTree&& rhs) {
+		BinarySearchTree tempTree = rhs;
+		root = clone(tempTree.root);
+		rhs.makeEmpty();
+		return *this;
+	}
+	// Destructor
+	~BinarySearchTree() {
+		makeEmpty(root);
+	}
 
 	// Some Query Methods
 	// Find the min and the max element
@@ -35,20 +56,26 @@ public:
 		return contains(x, root);
 	}
 	// Test empty container
-	bool isEmpty() const;
+	bool isEmpty() const {
+		return root == nullptr;
+	}
 	// Print all elements
-	void printTree(std::ostream& out = std::cout) const;
+	void printTree(std::ostream& out = std::cout) const {
+		printTree(root, out);
+	}
 
 	// Some Modification Methods:
 	// Empty container
-	void makeEmpty();
+	void makeEmpty() {
+		makeEmpty(root);
+	}
 	// Insert elements
 	void insert(const Comparable& x) { // Copy Version
 		insert(x, root);
 	}
-	void insert(Comparable&& x); { // Move Version
+	void insert(Comparable&& x) { // Move Version
 		insert(x, root);
-	}
+	} 
 	// remove elements
 	void remove(const Comparable& x) {
 		remove(x, root);
@@ -97,20 +124,20 @@ private:
 	void remove(const Comparable& x, BinaryNode*& t) {
 		if (t == nullptr)
 			return;
-		if (x < t->element)
+		if (x < t->element) // find the target node
 			remove(x, t->left);
-		else if (t->element < x)
+		else if (t->element < x) // find the target node
 			remove(x, t->right);
 		else if (t->left != nullptr && t->right != nullptr) // Two children
 		{
-			t->element = findMin(t->right)->element;
-			remove(t->element, t->right);
+			t->element = findMin(t->right)->element; // substitute current element with the minimal element of the right subtree
+			remove(t->element, t->right); // remove the minimal element of the right subtree
 		}
-		else
+		else // Only one child
 		{
 			BinaryNode* oldNode = t;
-			t = (t->left != nullptr) ? t->left : t->right;
-			delete oldNode;
+			t = (t->left != nullptr) ? t->left : t->right; // let the parent node point to the child node. "t = t->child(left or right);"
+			delete oldNode; // delete the target node.
 		}
 	}
 
@@ -139,9 +166,28 @@ private:
 	}
 	// need to create a new tree, so the parameter must be a reference of a pointer
 	void makeEmpty(BinaryNode*& t) {
-
+		if (t != nullptr)
+		{
+			makeEmpty(t->left);
+			makeEmpty(t->right);
+			delete t;
+		}
+		t = nullptr;
 	}
-	void printTree(BinaryNode* t, std::ostream& out) const;
-	BinaryNode* clone(BinaryNode* t) const;
+	// preorder, inorder(¡Ì), postorder
+	void printTree(BinaryNode* t, std::ostream& out) const {
+		out << t->element;
+		if (t->left != nullptr)
+			printTree(t->left, out);
+		if (t->right != nullptr)
+			printTree(t->right, out);
+	}
+
+	BinaryNode* clone(BinaryNode* t) const {
+		if (t == nullptr)
+			return nullptr;
+		else
+			return new BinaryNode{ t->element, clone(t->left), clone(t->right) };
+	}
 
 };
